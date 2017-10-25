@@ -1,7 +1,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Compute shape matrix with Constrained Least Squares and no inliers
-% evaluation
+% evaluation. All data set is considered.
 %
 % - Values = [4 x 6] cell array of inliers for each voltage component;
 % - S_sample = [6 x6] Shape matrix;
@@ -32,25 +32,12 @@ end
 function [c_i] = optimal_lsq(A_eq,b_eq,A_ineq,b_ineq,x0,f,V,F_ref,options,lb,ub)
 
 
-% [x,~,~,flag] = lsqlin(F_ref,V,[],[],[],[],lb(:,f),ub(:,f),x0.',options);
-
-
-% if flag == 1
-%
-% %     c_i = x';
-%
-%
-% else
-%
-%     c_i = x0;
-% end
-
 y = V;
 x = F_ref;
 
 [s,~,flag] = fmincon(@(s)cost(s,y,x),x0.',[],[],[],[],lb(:,f),ub(:,f),[],options);
 
-flag
+
 
 if flag == -1 || flag == -2
     
@@ -60,8 +47,6 @@ else
 
     c_i = s';
 end
-
-c_i
 
 end
 

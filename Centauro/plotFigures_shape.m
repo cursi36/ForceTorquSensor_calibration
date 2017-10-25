@@ -55,7 +55,7 @@ hold off
 if (S_sample == zeros(6))
     
 else
-    L = 20/1000;
+    L = 20/1000; % sensor's length
     
     S_sample(:,4:6) = S_sample(:,4:6)*L;
     

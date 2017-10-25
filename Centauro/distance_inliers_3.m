@@ -8,23 +8,26 @@
 % - Spread = [ 1 x n_comp] Spread of the inliers.
 % - F_sample_ref = [m x 6] Reference wrench;
 % - S = Acquired data;
-% - S_sample = [n_comp x 6] rows of the shape matrix
+% - r = [1 x 2]  Dimension of latest acquired data set = 15;
+% - S_sample = [n_comp x 6] rows of the shape matrix;
+% - limits = sensor's range.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [n_in,Inliers,Pop,Spread] = distance_inliers_3(F_sample_ref,S_sample,S,limits,res,r)
 
-% Threshold for inliers is: error in V smaller than 3*average of errors
+% Threshold for inliers is: error in V smaller than 2*average of errors
 
-[sr,~] = size(S_sample);
+[sr,~] = size(S_sample); % number of components to analyse
 
 
 V_ref = S(:,2:end).'; % refrence voltage
 
-V = S_sample*F_sample_ref;  % fitted voltage
+V = S_sample*F_sample_ref;  % fitted voltage (computed one)
 
 [sS,~] = size(S);
 Points = [1:sS]';
 
-n_in = zeros(2,sr);  %[tot inliers; In on new set]
+n_in = zeros(2,sr);  %[tot inliers; inliers on new set]
 
 if sr > 1 % More than one component analysed
     
@@ -41,9 +44,8 @@ if sr > 1 % More than one component analysed
         
         
         thresh = 1/sqrt(length(err))*norm(err); % Inliers threshold
-        
         w_lim = 2*thresh;
-        %
+        
         f = find( abs(err) <= w_lim); % inliers
         n_in(1,i) = length(f);
         Inliers{1,i} = Points(f,1);
@@ -80,9 +82,8 @@ else % only one voltage component analysed
     err = (V_ref-V); % [0 .... 0 err]
     
     thresh = 1/sqrt(length(err))*norm(err);
-    
     w_lim = 2*thresh;
-    %
+    
     f = find( abs(err) <= w_lim); % inliers
     n_in(1) = length(f);
     Inliers = Points(f,1);

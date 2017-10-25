@@ -10,7 +10,7 @@
 % - options = solver options;
 % - A_eq,b_eq,A_ineq,b_ineq,lb,ub = equality, inequality constraints and
 % bounds;
-% - limits = [6 x 1] Range of each wreanch component;
+% - limits = [6 x 1] Range of each wrench component;
 % res = [6 x 1] Resolution for each force component.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -27,7 +27,7 @@ S_mat = zeros(6,6,2); % Inizialization of matrix on new data set
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Old model evaluation
-% Compute inliers of old model on all dta set and on new set, and compute
+% Compute inliers of old model on all data set and on new set, and compute
 % function f_old.
 % - N_in = [# inliers on all data; # on new set ] [2 x n]
 
@@ -155,6 +155,7 @@ end
 % - f = component whose model has to be computed;
 % - s0 = [1 x 6];
 % - V = [m x 1] voltage component;
+% - lb, ub = bounds on raw's elements.
 
 function [s_i] = optimal_lsq(A_eq,b_eq,A_ineq,b_ineq,s0,f,V,F_ref,options,lb,ub)
 
@@ -186,7 +187,7 @@ thresh_d = 2*1/sqrt(length(d))*norm(d); % Inliers threshold
 
 w = (abs(d) < thresh_d).*((1-d.^2/(thresh_d)^2)).^2; % [m x 1] vector of weights
 
-err = d'*((w.^2).*d); % error fucntion
+err = d'*((w.^2).*d); % error function
 
 end
 

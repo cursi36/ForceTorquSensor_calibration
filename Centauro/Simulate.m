@@ -4,11 +4,15 @@
 
 function  Simulate(f,hs,hati,ax_pop,ax_R2,limits,res,h_in,T,h_mat)
 
-options = optimoptions('lsqlin','Display','off','MaxIter',3000);
-load 'C_ref'
-% C_sim = load('calib_test6.txt');
+options = optimoptions('lsqlin','Display','off','algorithm','active-set');
 
 options_fmincon = optimoptions('fmincon','Display','off','algorithm','sqp');
+
+warning('off','optimlib:lsqlin:WillBeRemoved');
+
+load 'C_ref';
+% C_sim = load('calib_test6.txt'); % Matrix for simulation
+
 
 for i = 1:6
     
@@ -17,39 +21,32 @@ for i = 1:6
     
 end
 
-
-%load 'C_ref'
-%C_sim = load('calib_test6.txt');
-%load 'Sigma'
+% Inequality Constraints
 
 A_constr = zeros(6,6,6);
 b_constr = zeros(6,1);
 
+% Equality Constraints for each voltage component
 Aeq_constr = zeros(6,6,6);
-beq_constr = 1e-03*zeros(6,1);
+beq_constr = 1e-06*zeros(6,1);
 
-Aeq_constr(1,1,1) = 1;  Aeq_constr(2,3,1) = 1;  Aeq_constr(3,4,1) = 1;  Aeq_constr(4,5,1) = 1;
-% Aeq_constr(6,2,1) = 1; Aeq_constr(6,6,1) = 1;
-Aeq_constr(1,1,2) = 1;  Aeq_constr(2,3,2) = 1;  Aeq_constr(3,5,2) = 1;
-% Aeq_constr(4,2,2) = 1;  Aeq_constr(4,6,2) = -1;   Aeq_constr(5,2,2) = 2;  Aeq_constr(5,4,2) = 1;
-Aeq_constr(1,2,3) = 1;  Aeq_constr(2,4,3) = 1;  Aeq_constr(3,6,3) = 1;
-% Aeq_constr(4,1,3) = 1;  Aeq_constr(4,3,3) = -1; Aeq_constr(5,1,3) = 1;  Aeq_constr(5,5,3) = -1;
-Aeq_constr(1,2,4) = 1;  Aeq_constr(2,3,4) = 1;  Aeq_constr(3,4,4) = 1;  Aeq_constr(4,6,4) = 1;
-% Aeq_constr(5,1,4) = 1;  Aeq_constr(5,5,4) = 1;
-Aeq_constr(1,2,5) = 1;  Aeq_constr(2,4,5) = 1;  Aeq_constr(3,6,5) = 1;
-% Aeq_constr(4,1,5) = 1;  Aeq_constr(4,5,5) = 1;  Aeq_constr(5,1,5) = 2;  Aeq_constr(5,3,5) = -1;
-Aeq_constr(1,1,6) = 1;  Aeq_constr(2,3,6) = 1;  Aeq_constr(3,5,6) = 1;
-% Aeq_constr(4,2,6) = 1;  Aeq_constr(4,4,6) = -1;  Aeq_constr(5,2,6) = 1;  Aeq_constr(5,6,6) = -1;
+Aeq_constr(1,1,1) = 1;  Aeq_constr(2,2,1) = 1;  Aeq_constr(3,6,1) = 1; % V1
+Aeq_constr(1,3,2) = 1;  Aeq_constr(2,4,2) = 1;  Aeq_constr(3,5,2) = 1; % V2
+Aeq_constr(1,1,3) = 1;  Aeq_constr(2,2,3) = 1;  Aeq_constr(3,4,3) = 1;   Aeq_constr(4,6,3) = 1; % V3
+Aeq_constr(1,1,4) = 1;  Aeq_constr(2,3,4) = 1;  Aeq_constr(3,4,4) = 1;   Aeq_constr(4,5,4) = 1; % V4
+Aeq_constr(1,1,5) = 1;  Aeq_constr(2,2,5) = 1;  Aeq_constr(3,6,5) = 1; % V5
+Aeq_constr(1,3,6) = 1;  Aeq_constr(2,4,6) = 1;  Aeq_constr(3,5,6) = 1; % V6
 
-
-eps = 1e-6;
+% Lowe and Upper bounds for each voltage
+eps = -1e-06; % Set to Inf if unconstrained solution wanted
+Eps = Inf;
 %
-lb(:,1) = -[eps;eps;Inf;Inf;Inf;eps];
-lb(:,2) = -[Inf;Inf;eps;eps;eps;Inf];
-lb(:,3) = -[eps;eps;Inf;eps;Inf;eps];
-lb(:,4) = -[eps;Inf;eps;eps;eps;Inf];
-lb(:,5) = -[eps;eps;Inf;Inf;Inf;eps];
-lb(:,6) = -[Inf;Inf;eps;eps;eps;Inf];
+lb(:,1) = -[eps;eps;Eps;Eps;Eps;eps];
+lb(:,2) = -[Eps;Eps;eps;eps;eps;Eps];
+lb(:,3) = -[eps;eps;Eps;eps;Eps;eps];
+lb(:,4) = -[eps;Eps;eps;eps;eps;Eps];
+lb(:,5) = -[eps;eps;Eps;Eps;Eps;eps];
+lb(:,6) = -[Eps;Eps;eps;eps;eps;Eps];
 
 ub(:,1) = -lb(:,1);
 ub(:,2) = -lb(:,2);
@@ -57,15 +54,7 @@ ub(:,3) = -lb(:,3);
 ub(:,4) = -lb(:,4);
 ub(:,5) = -lb(:,5);
 ub(:,6) = -lb(:,6);
-%
-% lb = -Inf*eye(6);
-% ub = Inf*eye(6);
 
-
-
-
-% Aeq_constr = zeros(6,6,6);
-% beq_constr = zeros(6,1);
 
 
 % 
@@ -85,42 +74,26 @@ sS = 0;
 
 for II = 1:s_sets
     
-    %Sens = load('sens_5.txt');
-    
+ 
     Sens = load(sets(II,:));
     
     [sS,~] = size(Sens);
-    
-   
-    
+
     Sensors = [];
-    
-    
-    
+
     Sens(:,1) = [1:sS].';
-    
-    % Verify that at least 6 values are always added to have pinv working
+
     i = 1;
     r = ones(2,1);
     s = zeros(2,1);
     
-    plane = nchoosek(1:6,2); % components combinations
     dir_sens=['Fx';'Fy';'Fz';'Mx';'My';'Mz'];
     
     %% Take only ATI values
     [Min,Max,off_free,Sigma] = sensfree_cleaning;
      
     Sens(:,2:13) = Sens(:,2:13)-repmat(off_free(1,:),sS,1);
-    
-    %% Transformation Matrix
-    height = 0.16;
-    T = eye(6,6);
-    T(4,2) = -height;  T(5,1) = height;
-    
-    windowsize = 5;
-    b = 1/windowsize*ones(1,windowsize);
-    a = 1;
-    
+ 
     
     Values = cell(4,6);
     Values_opt = cell(4,6);
@@ -159,8 +132,10 @@ for II = 1:s_sets
     Sens(:,2:7) = Sens(:,8:13)*T.'*(inv(C_ref)).';
     f_out = find(any(Sens(:,2:13) >= repmat(0*Max,sS,1) | Sens(:,2:13) <= repmat(0*Min,sS,1),2)); % Values above Max
     
-%      Sens(f_out(300:349),2:7) = Sens(f_out(300:349),2:7)+10*randn(50,6);
+%      Sens(f_out(300:349),2:7) = Sens(f_out(300:349),2:7)+10*randn(50,6); Fake values addded in interval
 %     
+
+        % Fake values spread
 %     rng('default')
 %     n_fake = round(length(f_out)*0.2);
 %     fake = round(length(f_out)*rand(n_fake,1));
@@ -196,43 +171,31 @@ for II = 1:s_sets
         if isempty(f_Thresh) == 0
             
             I = I+1;
-            
-            %          S(r(i):r(i)+length(f_Thresh)-1,:) = Sens(f_Thresh,:);
+
             S = Sensors(f_Thresh,:);
             
             r(2) = length(f_Thresh);
             
             F_sample_ref = T*S(:,8:13).';
             
-            %                 [pop_ref] = Population(F_sample_ref,limits,res);
+            Population(F_sample_ref,limits,res,f,ax_pop); % Plot population of applied wrench
             
-            if r(2)-r(1) >= 15% Either take packages of points, or don't care, since also all data will be considered
-                
-%                 tic
-%                 
-%                 [Values,S_sample,N_in] = Calibrate_opt_dist(j,S,T,Values,r,F_sample_ref,...
-%                     S_sample,N_in,options,Aeq_constr,beq_constr,A_constr,b_constr,w_lim,lb,ub,limits,res,pop_lim);
-%                 
-%                 time(1) = time(1)+toc;
-%                 
-%                 tic
-% [Values_opt,S_sample_opt,N_in_opt] = Calibrate_opt_dist_3(j,S,T,Values_opt,r,F_sample_ref,...
-%                      S_sample_opt,N_in_opt,options_fmincon,Aeq_constr,beq_constr,A_constr,b_constr,w_lim,lb,ub,limits,res,pop_lim);
-% time(2) = time(2)+toc;
-% 
-% tic
-% [Values_2,S_sample_2,N_in_2] = Calibrate_rob_fit(j,S,T,Values_2,r,F_sample_ref,...
-%                      S_sample_2,N_in_2,options_fmincon,Aeq_constr,beq_constr,A_constr,b_constr,w_lim,lb,ub,limits,res,pop_lim);
-% 
-% time(3) = time(3)+toc;
-                
-%                
-               tic
+            if r(2)-r(1) >= 15% 
+
+% Constrained Robust method 
+         %   [Values,S_sample,N_in] = Calibrate_opt_dist(S,T,Values,r,F_sample_ref,...
+          %      S_sample,options_fmincon,Aeq_constr,beq_constr,A_constr,b_constr,lb,ub,limits,res);
+
+        % Robustfit (Unconstrained)
+%              [Values,S_sample,N_in] = Calibrate_rob_fit(S,T,Values,r,F_sample_ref,...
+%                 S_sample,options_fmincon,Aeq_constr,beq_constr,A_constr,b_constr,lb,ub,limits,res);
+
+        %Constrained Least Squares for each row
+
                 [Values_opt_tot,S_sample_opt_tot,N_in_opt_tot] = Calibrate_opt_tot(S,T,Values_opt_tot,r,F_sample_ref,...
                     S_sample_opt_tot,N_in_opt_tot,options,Aeq_constr,beq_constr,A_constr,b_constr,lb,ub,w_lim,limits,res);
                 %%%
-                
-                time(4) = time(4)+toc;
+
                 
                 C_sample = inv(S_sample_opt);
                 
@@ -269,16 +232,11 @@ for II = 1:s_sets
                       k_stop = k_stop+1;
                       
                       if k_stop == 10
-                      
-                      %% Good Calibration reached
-                      
+ 
                       figure(f(3))
                       plot(ax_R2(1),0,0,'.g','MarkerSize',50)
                       
-%                      save('C_sample.txt','C_sample')
-%              save('C_tot.txt','C_tot')
-                      
-                      
+                
                       end
                       
                       else
@@ -292,21 +250,17 @@ for II = 1:s_sets
                       
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Plots
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-                       F_calib = C_sample*Sensors(:,2:7).';
-                          
-                          F_sample_ref = T*Sensors(:,8:13).';
-                           
-                     
-        
-        
-        
-        plotFigures_shape(f,hs,hati,h_in,F_calib,F_sample_ref,Sensors,ax_R2,min(R2(:,2)),min(R2_dot),max(err),lab,Values_opt,h_mat,C_ref,C_sample)
-  
+    %% Plots
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    F_calib = C_sample*Sensors(:,2:7).';
+    
+    F_sample_ref = T*Sensors(:,8:13).';
+    
+    plotFigures_shape(f,hs,hati,h_in,F_calib,F_sample_ref,Sensors,ax_R2,min(R2(:,2)),min(R2_dot),max(err),lab,Values,h_mat,S_ref,S_sample)
+     
         s(1) = s(2);
         R2(:,1) = R2(:,2);
-        pause(0.005);
+        pause(0.05);
         
         
         
@@ -328,18 +282,26 @@ end
 
 end
 
-function [pop] = Population(F_sample_ref,limits,res)
+function  Population(F_sample_ref,limits,res,f,ax_pop)
 
-figure(10)
+figure(f(4))
 
 for i = 1:6
-    subplot(2,3,i)
-    hist(F_sample_ref(i,:),-limits(i):res(i):limits(i));
     
-    cnts = hist(F_sample_ref(i,:),-limits(i):res(i):limits(i));
+    x = -limits(i):res(i):limits(i);
+    
+    cnts = hist(F_sample_ref(i,:),x);
     f_cnts = find(cnts ~= 0);
-    pop(i) = length(f_cnts)/length(cnts);
+    
+    y = (f_cnts-1)/(length(cnts)-1); % mapping to [0 1]
+    
+    hold on
+    plot(i*ones(length(f_cnts),1),y,'.b')
+    hold off
     
 end
 
+
 end
+
+

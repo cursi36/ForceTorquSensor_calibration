@@ -3,14 +3,15 @@
 %
 % Obtain Shape matrix with different methods:
 % - with constrained optimization;
-% - unconstrained robustfit (IRLS);
-% - constrained IRLS;
+% - unconstrained robustfit;
 % - constrained optimization without inliers.
 %
 % Plot results
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function  LiveCalibrate(f,hs,hati,ax_pop,ax_R2,limits,res,h_in,T,h_mat)
+
+%% Initialization 
 
 options = optimoptions('lsqlin','Display','off','algorithm','active-set');
 
@@ -44,7 +45,7 @@ Aeq_constr(1,1,5) = 1;  Aeq_constr(2,2,5) = 1;  Aeq_constr(3,6,5) = 1; % V5
 Aeq_constr(1,3,6) = 1;  Aeq_constr(2,4,6) = 1;  Aeq_constr(3,5,6) = 1; % V6
 
 % Lowe and Upper bounds for each voltage
-eps = Inf;
+eps = -1e-06; % Set to Inf if unconstrained solution wanted
 Eps = Inf;
 %
 lb(:,1) = -[eps;eps;Eps;Eps;Eps;eps];
@@ -69,8 +70,8 @@ s = zeros(2,1);
 
 dir_sens=['Fx';'Fy';'Fz';'Mx';'My';'Mz'];
 
-% Get noise values from unloaded sensor
-[Min,Max,off_free,Sigma] = sensfree_cleaning;
+% Get noise values and offest from unloaded sensor
+[Min,Max,off_free,~] = sensfree_cleaning;
 
 
 packs = 15; % number of points to analize
@@ -108,18 +109,18 @@ k_stop = 0;
 
 data_thresh = 0; % Data Threshold; if 0 ----> Take all data
 
+%% Online Process 
+
 while i >= 1
     
-%         try
-    
-    
-    
-    Sensors = load ('sens5.txt');
+        try
+
+    Sensors = load ('sens.txt'); % File being saved from sensor reading
     [s(2),~] = size(Sensors);
     
-    Sensors(:,1) = Sensors(:,1)/(1e+09);
+    Sensors(:,1) = Sensors(:,1)/(1e+09); % Time stamp
     
-    Sensors(s(1)+1:s(2),2:13) = Sensors(s(1)+1:s(2),2:13)-repmat(off_free(1,:),s(2)-s(1),1);
+    Sensors(s(1)+1:s(2),2:13) = Sensors(s(1)+1:s(2),2:13)-repmat(off_free(1,:),s(2)-s(1),1); % Remove offset
     
     f_Thresh = find(any(Sensors(:,2:13) >= repmat(data_thresh*Max,s(2),1) | Sensors(:,2:13) <= repmat(data_thresh*Min,s(2),1),2));
     
@@ -128,40 +129,30 @@ while i >= 1
         S = Sensors(f_Thresh,:);
         [r(2),~] = size(S);
         
-        F_sample_ref = T*S(:,8:13).';
+        F_sample_ref = T*S(:,8:13).'; 
         
-        Population(F_sample_ref,limits,res,f,ax_pop);
-        
-        
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        if r(2)-r(1) >= packs
+        Population(F_sample_ref,limits,res,f,ax_pop); % Plot population of applied wrench
+
+        if r(2)-r(1) >= packs  
             
-%             tic
+        % Constrained Robust method 
             [Values,S_sample,N_in] = Calibrate_opt_dist(S,T,Values,r,F_sample_ref,...
                 S_sample,options_fmincon,Aeq_constr,beq_constr,A_constr,b_constr,lb,ub,limits,res);
-%             toc
-            
-%             tic
+
+        % Robustfit (Unconstrained)
 %              [Values,S_sample,N_in] = Calibrate_rob_fit(S,T,Values,r,F_sample_ref,...
 %                 S_sample,options_fmincon,Aeq_constr,beq_constr,A_constr,b_constr,lb,ub,limits,res);
-%             toc;
-            
-%             tic
-%               [Values,S_sample,N_in] = Calibrate_IRLS(S,T,Values,r,F_sample_ref,...
-%                  S_sample,options_fmincon,Aeq_constr,beq_constr,A_constr,b_constr,lb,ub,limits,res);
-% %             toc
-            %
+
+        % Constrained Least Squares for each row
       %     [Values,S_sample,N_in] = Calibrate_opt_tot(S,T,Values,r,F_sample_ref,...
      %          S_sample,options_fmincon,Aeq_constr,beq_constr,A_constr,b_constr,lb,ub);
             
-                      
-            
-            
+ 
             C_sample = inv(S_sample);
             
             F_calib = C_sample*S(:,2:7).';
             
-            S_sample_tot = S(:,2:7).'*pinv(F_sample_ref);
+            S_sample_tot = S(:,2:7).'*pinv(F_sample_ref); % OLS on whole Shape matrix
             
             C_tot = inv(S_sample_tot);
             
@@ -175,13 +166,11 @@ while i >= 1
             r(1) = r(2);
             
         end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
-        
+   
     end
     
     
-    f_min = find(R2(:,2) == min(R2(:,2)));
+    f_min = find(R2(:,2) == min(R2(:,2))); % Worst R^2
     lab(2,:) = dir_sens(f_min(1),:);
     
     if R2(f_min(1),2) >= 0.9
@@ -189,16 +178,10 @@ while i >= 1
         k_stop = k_stop+1;
         
         if k_stop == 10
-            
-            %% Good Calibration reached
-            
+
             figure(f(3))
             plot(ax_R2(1),0,0,'.g','MarkerSize',50)
-            
-            %                      save('C_sample.txt','C_sample')
-            %              save('C_tot.txt','C_tot')
-            
-            
+
         end
         
     else
@@ -229,11 +212,10 @@ while i >= 1
     R2(:,1) = R2(:,2);
     pause(0.1);
     
-%          catch
-%     %
-%     %
-%         end
-%     
+         catch
+
+        end
+    
 end
 end
 
