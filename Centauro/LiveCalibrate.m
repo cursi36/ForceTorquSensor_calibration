@@ -44,7 +44,7 @@ Aeq_constr(1,1,5) = 1;  Aeq_constr(2,2,5) = 1;  Aeq_constr(3,6,5) = 1; % V5
 Aeq_constr(1,3,6) = 1;  Aeq_constr(2,4,6) = 1;  Aeq_constr(3,5,6) = 1; % V6
 
 % Lowe and Upper bounds for each voltage
-eps = 1e-06;
+eps = Inf;
 Eps = Inf;
 %
 lb(:,1) = -[eps;eps;Eps;Eps;Eps;eps];
@@ -110,11 +110,11 @@ data_thresh = 0; % Data Threshold; if 0 ----> Take all data
 
 while i >= 1
     
-        try
+%         try
     
     
     
-    Sensors = load ('sens.txt');
+    Sensors = load ('sens5.txt');
     [s(2),~] = size(Sensors);
     
     Sensors(:,1) = Sensors(:,1)/(1e+09);
@@ -137,8 +137,8 @@ while i >= 1
         if r(2)-r(1) >= packs
             
 %             tic
- %            [Values,S_sample,N_in] = Calibrate_opt_dist(S,T,Values,r,F_sample_ref,...
-%                 S_sample,options_fmincon,Aeq_constr,beq_constr,A_constr,b_constr,lb,ub,limits,res);
+            [Values,S_sample,N_in] = Calibrate_opt_dist(S,T,Values,r,F_sample_ref,...
+                S_sample,options_fmincon,Aeq_constr,beq_constr,A_constr,b_constr,lb,ub,limits,res);
 %             toc
             
 %             tic
@@ -147,9 +147,9 @@ while i >= 1
 %             toc;
             
 %             tic
-              [Values,S_sample,N_in] = Calibrate_IRLS(S,T,Values,r,F_sample_ref,...
-                 S_sample,options_fmincon,Aeq_constr,beq_constr,A_constr,b_constr,lb,ub,limits,res);
-%             toc
+%               [Values,S_sample,N_in] = Calibrate_IRLS(S,T,Values,r,F_sample_ref,...
+%                  S_sample,options_fmincon,Aeq_constr,beq_constr,A_constr,b_constr,lb,ub,limits,res);
+% %             toc
             %
       %     [Values,S_sample,N_in] = Calibrate_opt_tot(S,T,Values,r,F_sample_ref,...
      %          S_sample,options_fmincon,Aeq_constr,beq_constr,A_constr,b_constr,lb,ub);
@@ -209,10 +209,10 @@ while i >= 1
         
     end
     
-    %         C_sample_opt_tot = inv(S_sample_opt);
+            C_sample_opt_tot = inv(S_sample_opt);
     
-%     save('C_sample.mat','C_sample')
-    %         save('C_sample_opt_tot.mat','C_sample_opt_tot')
+     save('C_sample.mat','C_sample')
+%             save('C_sample_opt_tot.mat','C_sample_opt_tot')
 %     save('C_tot.mat','C_tot')
     
     
@@ -229,11 +229,11 @@ while i >= 1
     R2(:,1) = R2(:,2);
     pause(0.1);
     
-         catch
-    %
-    %
-        end
-    
+%          catch
+%     %
+%     %
+%         end
+%     
 end
 end
 

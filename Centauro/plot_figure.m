@@ -14,23 +14,45 @@ S(:,:,3) = load('Mat3.txt');
 S(:,:,4) = load('Mat4.txt');
 S(:,:,5) = load('Mat5.txt');
 
+
+S_mine = zeros(6,6,5);
+
+S_mine(:,:,1) = load('S_mine_1.txt'); 
+S_mine(:,:,2) = load('S_mine_2.txt');
+S_mine(:,:,3) = load('S_mine_3.txt');
+S_mine(:,:,4) = load('S_mine_4.txt');
+
+
 height = 0.05;
 T = eye(6,6);
 T(4,2) = -height;  T(5,1) = height;
+S_pinv = zeros(6,6,5);
 
 
 
 
-
-for ii = 1
+for ii = 1:4
 Sens = Sensors{:,ii};
+    F_ref = T*Sens(:,8:13).';
+    
+    S_pinv(:,:,ii) = Sens(:,2:7).'*pinv(F_ref);
+    
+end
+for ii = 1:4
+Sens = Sensors{:,ii};
+    F_ref = T*Sens(:,8:13).';
+    
 for i = 1:5
     C(:,:,i) = inv(S(:,:,i));
     F_calib = C(:,:,i)*Sens(:,2:7).';
-    F_ref = T*Sens(:,8:13).';
-    V = Sens(:,2);
-    s_1 = pinv(F_ref.')*V;
     [R2(:,i,ii)] = R_sqr2(F_ref.',F_calib);
+    
+    F_calib = inv(S_pinv(:,:,i))*Sens(:,2:7).';
+    [R2_pinv(:,i,ii)] = R_sqr2(F_ref.',F_calib);
+    
+    F_calib = inv(S_mine(:,:,i))*Sens(:,2:7).';
+    [R2_mine(:,i,ii)] = R_sqr2(F_ref.',F_calib);
+    
 end
 
 
@@ -38,7 +60,7 @@ end
 
 end
 
-C_opt = C(:,:,2);
+
 
 
 % L = 0.02;
